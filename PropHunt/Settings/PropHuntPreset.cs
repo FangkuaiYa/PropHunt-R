@@ -10,6 +10,7 @@ using UnityEngine.Events;
 
 namespace PropHunt.Settings
 {
+    [HarmonyPatch]
     class PropHuntPreset 
     {
         static StringNames presetStringName = CustomStringName.CreateAndRegister("Prop Hunt");

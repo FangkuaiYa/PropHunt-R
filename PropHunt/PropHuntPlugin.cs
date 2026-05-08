@@ -44,8 +44,24 @@ public partial class PropHuntPlugin : BasePlugin
         PropHuntPreset.SetupPreset();
         PropHuntSettings.SetupCustomSettings();
 
-        Harmony.PatchAll(typeof(Patches));
-        Harmony.PatchAll(typeof(PropHuntPreset));
-        Harmony.PatchAll(typeof(PropHuntSettings));
+        Harmony.PatchAll();
     }
+
+	[HarmonyPatch(typeof(HudManager), nameof(HudManager.Update))]
+	public static class HudUpdatePatch
+	{
+		public static void Postfix()
+		{
+			CustomButton.HudUpdate();
+		}
+	}
+
+	[HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Close))]
+	public static class MeetingClosePatch
+	{
+		public static void Postfix()
+		{
+			CustomButton.MeetingEndedUpdate();
+		}
+	}
 }

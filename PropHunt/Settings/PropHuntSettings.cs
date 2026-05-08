@@ -8,6 +8,7 @@ using UnityEngine;
 
 namespace PropHunt.Settings
 {
+	[HarmonyPatch]
 	class PropHuntSettings
 	{
 		// Prop Hunt Setting
