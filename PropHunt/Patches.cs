@@ -24,7 +24,7 @@ namespace PropHunt
 				() =>
 				{
 					if (!PropHuntPlugin.isPropHunt || PlayerControl.LocalPlayer.Data.Role.IsImpostor) return;
-					GameObject closest = Utility.FindClosestConsole(PlayerControl.LocalPlayer.gameObject, 3);
+					GameObject closest = Utility.FindClosestConsole(PlayerControl.LocalPlayer.gameObject, PropHuntPlugin.disguiseRange);
 					if (closest != null)
 					{
 						for (int i = 0; i < ShipStatus.Instance.AllConsoles.Length; i++)
@@ -33,6 +33,9 @@ namespace PropHunt
 							{
 								Logger<PropHuntPlugin>.Info("Task of index " + i + " being sent out");
 								RPCHandler.RPCPropSync(PlayerControl.LocalPlayer, i + "");
+								// Start the disguise cooldown (configurable in the settings)
+								disguiseButton.Timer = Mathf.Max(0.01f, PropHuntPlugin.disguiseCooldown);
+								disguiseButton.MaxTimer = Mathf.Max(0.01f, PropHuntPlugin.disguiseCooldown);
 								break;
 							}
 						}
@@ -47,7 +50,7 @@ namespace PropHunt
 					if (!PropHuntPlugin.isPropHunt || PlayerControl.LocalPlayer.Data.Role.IsImpostor
 						|| AmongUsClient.Instance.GameState != InnerNet.InnerNetClient.GameStates.Started)
 						return false;
-					GameObject target = Utility.FindClosestConsole(PlayerControl.LocalPlayer.gameObject, 3);
+					GameObject target = Utility.FindClosestConsole(PlayerControl.LocalPlayer.gameObject, PropHuntPlugin.disguiseRange);
 					if (target != null)
 					{
 						Sprite s = target.GetComponent<SpriteRenderer>()?.sprite
@@ -55,18 +58,20 @@ namespace PropHunt
 						if (s != null)
 						{
 							propPreviewRenderer.sprite = s;
-							propPreviewHolder.transform.localScale = Vector3.one * 1.5f;
+							propPreviewHolder.transform.localScale = Vector3.one;
 							float max = Mathf.Max(s.bounds.size.x, s.bounds.size.y);
 							if (max > 0) propPreviewHolder.transform.localScale /= max;
 							return true;
 						}
 					}
+					// No prop in range → clear the stale preview so it doesn't linger
+					if (propPreviewRenderer != null) propPreviewRenderer.sprite = null;
 					return false;
 				},
 				() => { },
 				null,
-				new Vector3(-2f, 1f, 0f),
-				__instance,
+                new Vector3(0f, 1f, 0f),
+                __instance,
 				KeyCode.R,
 				buttonText: "DISGUISE"
 			);
@@ -75,6 +80,9 @@ namespace PropHunt
 			propPreviewRenderer = propPreviewHolder.AddComponent<SpriteRenderer>();
 			propPreviewHolder.transform.SetParent(disguiseButton.actionButton.transform, false);
 			propPreviewHolder.transform.localPosition = new Vector3(0, 0, -2f);
+
+			// Ready to disguise immediately (override the button's default cooldown value)
+			disguiseButton.Timer = -1f;
 
 			revertButton = new CustomButton(
 				() =>
@@ -86,6 +94,20 @@ namespace PropHunt
 						Logger<PropHuntPlugin>.Info("Reverting to crewmate");
 						RPCHandler.RPCRevert(player);
 						player.Visible = true;
+
+						// Reverting the disguise also releases the "move prop"
+						// lock so the player regains normal movement control.
+						if (isMovingProp)
+						{
+							isMovingProp = false;
+							if (movePropButton != null)
+							{
+								movePropButton.buttonText = "MOVE PROP";
+								movePropButton.actionButtonRenderer.color = Palette.EnabledColor;
+								movePropButton.Timer = 0f;
+								movePropButton.isEffectActive = false;
+							}
+						}
 					}
 				},
 				() => PropHuntPlugin.isPropHunt
@@ -96,12 +118,13 @@ namespace PropHunt
 					   && AmongUsClient.Instance.GameState == InnerNet.InnerNetClient.GameStates.Started,
 				() => true,
 				() => { },
-				null,
-				new Vector3(-3f, 1f, 0f),
-				__instance,
+                Utility.LoadSprite("PropHunt.Resources.RevertButton.png", 150f),
+                new Vector3(-2f, 1f, 0f),
+                __instance,
 				KeyCode.C,
 				buttonText: "REVERT"
 			);
+			revertButton.Timer = -1f;
 
 			movePropButton = new CustomButton(
 				() =>
@@ -111,9 +134,11 @@ namespace PropHunt
 						PlayerControl player = PlayerControl.LocalPlayer;
 						if (PropManager.playerToProp.ContainsKey(player))
 						{
+							// Sync the final (fine-tuned) position to every client
 							RPCHandler.RPCPropPos(player, PropManager.playerToProp[player].transform.localPosition);
 						}
 						isMovingProp = false;
+						movePropButton.buttonText = "MOVE PROP";
 						movePropButton.actionButtonRenderer.color = Palette.EnabledColor;
 						movePropButton.Timer = 0f;
 						movePropButton.isEffectActive = false;
@@ -121,6 +146,7 @@ namespace PropHunt
 					else
 					{
 						isMovingProp = true;
+						movePropButton.buttonText = "FIX PROP";
 						movePropButton.actionButtonRenderer.color = new Color(0F, 0.8F, 0F);
 					}
 				},
@@ -141,17 +167,19 @@ namespace PropHunt
 							RPCHandler.RPCPropPos(player, PropManager.playerToProp[player].transform.localPosition);
 						}
 						isMovingProp = false;
+						movePropButton.buttonText = "MOVE PROP";
 					}
 				},
-				null,
-				new Vector3(-1f, 1f, 0f),
-				__instance,
+				Utility.LoadSprite("PropHunt.Resources.MovePropButton.png", 150f),
+                new Vector3(-1f, 1f, 0f),
+                __instance,
 				KeyCode.LeftShift,
 				hasEffect: false,
 				effectDuration: 0f,
 				onEffectEnds: () => { },
 				buttonText: "MOVE PROP"
 			);
+			movePropButton.Timer = -1f;
 		}
 
 		[HarmonyPatch(typeof(KeyboardJoystick), nameof(KeyboardJoystick.Update))]
@@ -341,7 +369,8 @@ namespace PropHunt
 				}
 
 				DestroyableSingleton<HudManager>.Instance.Chat.SetVisible(true);
-			}
+                DestroyableSingleton<HudManager>.Instance.MatchInfoButton.gameObject.SetActive(false);
+            }
 			else
 			{
 				foreach (NetworkedPlayerInfo player in GameData.Instance.AllPlayers)

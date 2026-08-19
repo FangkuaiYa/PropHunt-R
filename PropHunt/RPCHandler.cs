@@ -27,6 +27,9 @@ public static class RPCHandler
 		propRenderer.transform.localPosition = new Vector3(0, 0, -3);
 		propRenderer.sprite = prop.GetComponent<SpriteRenderer>().sprite;
 		player.Visible = false;
+		// Hide the pet too - it is a separate object and would otherwise give
+		// the disguised player away (especially to the seeker).
+		player.cosmetics.SetPetVisible(false);
 	}
 
 	[MethodRpc((uint)RPC.PropPos)]
@@ -42,6 +45,7 @@ public static class RPCHandler
         {
             PropManager.playerToProp[player].sprite = null;
             player.Visible = true;
+            player.cosmetics.SetPetVisible(true);
         }
     }
 
@@ -58,21 +62,31 @@ public static class RPCHandler
 	}
 
 	[MethodRpc((uint)RPC.SettingSync)]
-	public static void RPCSettingSync(PlayerControl player, bool _isPropHunt, float _missTimePenalty, bool _infection)
+	public static void RPCSettingSync(PlayerControl player, bool _isPropHunt, float _missTimePenalty, float _disguiseRange, float _disguiseCooldown)
 	{
 		bool propHuntChanged = _isPropHunt != PropHuntPlugin.isPropHunt;
 		bool penaltyChanged = _missTimePenalty != PropHuntPlugin.missTimePenalty;
+		bool rangeChanged = _disguiseRange != PropHuntPlugin.disguiseRange;
+		bool cooldownChanged = _disguiseCooldown != PropHuntPlugin.disguiseCooldown;
 
 		PropHuntPlugin.isPropHunt = _isPropHunt;
 		PropHuntPlugin.missTimePenalty = _missTimePenalty;
+		PropHuntPlugin.disguiseRange = _disguiseRange;
+		PropHuntPlugin.disguiseCooldown = _disguiseCooldown;
+
+		// Keep the custom settings menu in sync on every client
+		PropHuntOptions.UpdateFromPlugin();
 
 		// Persist to config when the local player is the one who made the change
 		if (player == PlayerControl.LocalPlayer &&
-			(propHuntChanged || penaltyChanged))
+			(propHuntChanged || penaltyChanged || rangeChanged || cooldownChanged))
 		{
 			PropHuntPlugin.Instance.IsPropHunt.Value = PropHuntPlugin.isPropHunt;
 			PropHuntPlugin.Instance.MissTimePenalty.Value = PropHuntPlugin.missTimePenalty;
+			PropHuntPlugin.Instance.DisguiseRange.Value = PropHuntPlugin.disguiseRange;
+			PropHuntPlugin.Instance.DisguiseCooldown.Value = PropHuntPlugin.disguiseCooldown;
 			PropHuntPlugin.Instance.Config.Save();
+			PropHuntOptions.SaveOptions();
 		}
 
 		// Show change notification to everyone (host and non-host alike)
@@ -82,12 +96,22 @@ public static class RPCHandler
 			string value = _isPropHunt
 				? DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.SettingsOn)
 				: DestroyableSingleton<TranslationController>.Instance.GetString(StringNames.SettingsOff);
-			PropHuntSettings.ShowSettingNotification("Prop Hunt", value);
+			PropHuntOptions.ShowSettingNotification("Prop Hunt", value);
 		}
 
 		if (penaltyChanged)
 		{
-			PropHuntSettings.ShowSettingNotification("Miss Penalty", _missTimePenalty.ToString("0.0#") + "s");
+			PropHuntOptions.ShowSettingNotification("Miss Penalty", _missTimePenalty.ToString("0.0#") + "s");
+		}
+
+		if (rangeChanged)
+		{
+			PropHuntOptions.ShowSettingNotification("Disguise Range", _disguiseRange.ToString("0.#"));
+		}
+
+		if (cooldownChanged)
+		{
+			PropHuntOptions.ShowSettingNotification("Disguise Cooldown", _disguiseCooldown.ToString("0") + "s");
 		}
 
 		// Adjust min player count based on game mode
