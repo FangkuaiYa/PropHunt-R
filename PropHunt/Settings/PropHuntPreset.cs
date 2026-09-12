@@ -134,30 +134,33 @@ namespace PropHunt.Settings
 
         // Set the correct recommendations when the prop preset is selected
         [HarmonyPatch(typeof(HideNSeekGameOptionsV10), nameof(HideNSeekGameOptionsV10.SetRecommendations), [typeof(int), typeof(bool), typeof(RulesPresets)])]
+        [HarmonyPatch(typeof(HideNSeekGameOptionsV11), nameof(HideNSeekGameOptionsV11.SetRecommendations), [typeof(int), typeof(bool), typeof(RulesPresets)])]
         [HarmonyPostfix]
-        public static void SetRecommendations(HideNSeekGameOptionsV10 __instance, int numPlayers, bool isOnline, RulesPresets rulesPresets) 
+        public static void SetRecommendations(object __instance, int numPlayers, bool isOnline, RulesPresets rulesPresets) 
         {
             if (rulesPresets == propHuntRulePreset) 
             {
-                /* Recommended Settings:
-                *   - Final Seek Pings & Map
-                *   - Flashlight off
-                *   - Lower Final Time
-                *   - Longer Hiding Time
-                *   - Larger impostor vision radius
-                *   - 10s of time penalty
-                *   - Impostor cannot see through walls
-                */
-
-                __instance.SeekerPings = false;
-                __instance.SeekerFinalMap = false;
-                __instance.FinalCountdownTime = 30f;
-                __instance.EscapeTime = 240f;
-                // __instance.ImpostorFlashlightSize = 0.5f;
-                __instance.ImpostorLightMod = 1;
-                RPCHandler.RPCSettingSync(PlayerControl.LocalPlayer, true, 10f, PropHuntPlugin.disguiseRange, PropHuntPlugin.disguiseCooldown);
+                HideNSeekGameOptionsV10 v10 = __instance as HideNSeekGameOptionsV10;
+                if (v10 != null)
+                {
+                    v10.SeekerPings = false;
+                    v10.SeekerFinalMap = false;
+                    v10.FinalCountdownTime = 30f;
+                    v10.EscapeTime = PropHuntPlugin.seekerWaitTime;
+                    v10.ImpostorLightMod = 1;
+                }
+                HideNSeekGameOptionsV11 v11 = __instance as HideNSeekGameOptionsV11;
+                if (v11 != null)
+                {
+                    v11.SeekerPings = false;
+                    v11.SeekerFinalMap = false;
+                    v11.FinalCountdownTime = 30f;
+                    v11.EscapeTime = PropHuntPlugin.seekerWaitTime;
+                    v11.ImpostorLightMod = 1;
+                }
+                RPCHandler.RPCSettingSync(PlayerControl.LocalPlayer, true, PropHuntPlugin.missTimePenalty, PropHuntPlugin.disguiseRange, PropHuntPlugin.disguiseCooldown, PropHuntPlugin.seekerWaitTime);
             } else {
-                RPCHandler.RPCSettingSync(PlayerControl.LocalPlayer, false, 10f, PropHuntPlugin.disguiseRange, PropHuntPlugin.disguiseCooldown);
+                RPCHandler.RPCSettingSync(PlayerControl.LocalPlayer, false, PropHuntPlugin.missTimePenalty, PropHuntPlugin.disguiseRange, PropHuntPlugin.disguiseCooldown, PropHuntPlugin.seekerWaitTime);
             }
         }
 

@@ -62,29 +62,32 @@ public static class RPCHandler
 	}
 
 	[MethodRpc((uint)RPC.SettingSync)]
-	public static void RPCSettingSync(PlayerControl player, bool _isPropHunt, float _missTimePenalty, float _disguiseRange, float _disguiseCooldown)
+	public static void RPCSettingSync(PlayerControl player, bool _isPropHunt, float _missTimePenalty, float _disguiseRange, float _disguiseCooldown, float _seekerWaitTime)
 	{
 		bool propHuntChanged = _isPropHunt != PropHuntPlugin.isPropHunt;
 		bool penaltyChanged = _missTimePenalty != PropHuntPlugin.missTimePenalty;
 		bool rangeChanged = _disguiseRange != PropHuntPlugin.disguiseRange;
 		bool cooldownChanged = _disguiseCooldown != PropHuntPlugin.disguiseCooldown;
+		bool seekerWaitChanged = _seekerWaitTime != PropHuntPlugin.seekerWaitTime;
 
 		PropHuntPlugin.isPropHunt = _isPropHunt;
 		PropHuntPlugin.missTimePenalty = _missTimePenalty;
 		PropHuntPlugin.disguiseRange = _disguiseRange;
 		PropHuntPlugin.disguiseCooldown = _disguiseCooldown;
+		PropHuntPlugin.seekerWaitTime = _seekerWaitTime;
 
 		// Keep the custom settings menu in sync on every client
 		PropHuntOptions.UpdateFromPlugin();
 
 		// Persist to config when the local player is the one who made the change
 		if (player == PlayerControl.LocalPlayer &&
-			(propHuntChanged || penaltyChanged || rangeChanged || cooldownChanged))
+			(propHuntChanged || penaltyChanged || rangeChanged || cooldownChanged || seekerWaitChanged))
 		{
 			PropHuntPlugin.Instance.IsPropHunt.Value = PropHuntPlugin.isPropHunt;
 			PropHuntPlugin.Instance.MissTimePenalty.Value = PropHuntPlugin.missTimePenalty;
 			PropHuntPlugin.Instance.DisguiseRange.Value = PropHuntPlugin.disguiseRange;
 			PropHuntPlugin.Instance.DisguiseCooldown.Value = PropHuntPlugin.disguiseCooldown;
+			PropHuntPlugin.Instance.SeekerWaitTime.Value = PropHuntPlugin.seekerWaitTime;
 			PropHuntPlugin.Instance.Config.Save();
 			PropHuntOptions.SaveOptions();
 		}
@@ -112,6 +115,11 @@ public static class RPCHandler
 		if (cooldownChanged)
 		{
 			PropHuntOptions.ShowSettingNotification("Disguise Cooldown", _disguiseCooldown.ToString("0") + "s");
+		}
+
+		if (seekerWaitChanged)
+		{
+			PropHuntOptions.ShowSettingNotification("Seeker Wait Time", _seekerWaitTime.ToString("0") + "s");
 		}
 
 		// Adjust min player count based on game mode

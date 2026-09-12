@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using AmongUs.GameOptions;
 using HarmonyLib;
-using PropHunt;
 using Reactor.Localization.Utilities;
 using UnityEngine;
 
@@ -15,6 +14,7 @@ namespace PropHunt.Settings
         public const byte MissPenaltyId = 1;
         public const byte DisguiseRangeId = 2;
         public const byte DisguiseCooldownId = 3;
+        public const byte SeekerWaitTimeId = 4;
 
         private const string SaveFileName = "PropHunt-HostSettings";
 
@@ -36,6 +36,7 @@ namespace PropHunt.Settings
             float missPenalty = plugin?.MissTimePenalty.Value ?? 10f;
             float range = plugin?.DisguiseRange.Value ?? 1.5f;
             float cooldown = plugin?.DisguiseCooldown.Value ?? 5f;
+            float seekerWait = plugin?.SeekerWaitTime.Value ?? 10f;
 
             string[] penaltyValues = new[] { "0", "5", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55", "60" };
             int penaltyIndex = Array.IndexOf(penaltyValues, missPenalty.ToString("0"));
@@ -48,6 +49,10 @@ namespace PropHunt.Settings
             string[] cooldownValues = new[] { "0", "3", "5", "10", "15", "20", "30" };
             int cooldownIndex = Array.IndexOf(cooldownValues, cooldown.ToString("0"));
             if (cooldownIndex < 0) cooldownIndex = 2; // 5s default
+
+            string[] seekerWaitValues = new[] { "5", "10", "15", "20", "25", "30", "45", "60", "90", "120" };
+            int seekerWaitIndex = Array.IndexOf(seekerWaitValues, seekerWait.ToString("0"));
+            if (seekerWaitIndex < 0) seekerWaitIndex = 1; // 10s default
 
             return new List<PropHuntOption>
             {
@@ -80,6 +85,14 @@ namespace PropHunt.Settings
                     AllValues = cooldownValues,
                     Value = (byte)cooldownIndex,
                     Suffix = "s"
+                },
+                new PropHuntOption
+                {
+                    Id = SeekerWaitTimeId,
+                    Name = "Seeker Wait Time",
+                    AllValues = seekerWaitValues,
+                    Value = (byte)seekerWaitIndex,
+                    Suffix = "s"
                 }
             };
         }
@@ -100,16 +113,19 @@ namespace PropHunt.Settings
             PropHuntOption penalty = Find(MissPenaltyId);
             PropHuntOption range = Find(DisguiseRangeId);
             PropHuntOption cooldown = Find(DisguiseCooldownId);
+            PropHuntOption seekerWait = Find(SeekerWaitTimeId);
 
             PropHuntPlugin.isPropHunt = propHunt != null && propHunt.Value == 1;
             PropHuntPlugin.missTimePenalty = penalty != null && float.TryParse(penalty.AllValues[penalty.Value], out float v) ? v : 10f;
             PropHuntPlugin.disguiseRange = range != null && float.TryParse(range.AllValues[range.Value], out float r) ? r : 1.5f;
             PropHuntPlugin.disguiseCooldown = cooldown != null && float.TryParse(cooldown.AllValues[cooldown.Value], out float c) ? c : 5f;
+            PropHuntPlugin.seekerWaitTime = seekerWait != null && float.TryParse(seekerWait.AllValues[seekerWait.Value], out float s) ? s : 10f;
 
             PropHuntPlugin.Instance.IsPropHunt.Value = PropHuntPlugin.isPropHunt;
             PropHuntPlugin.Instance.MissTimePenalty.Value = PropHuntPlugin.missTimePenalty;
             PropHuntPlugin.Instance.DisguiseRange.Value = PropHuntPlugin.disguiseRange;
             PropHuntPlugin.Instance.DisguiseCooldown.Value = PropHuntPlugin.disguiseCooldown;
+            PropHuntPlugin.Instance.SeekerWaitTime.Value = PropHuntPlugin.seekerWaitTime;
             PropHuntPlugin.Instance.Config.Save();
         }
 
@@ -121,6 +137,7 @@ namespace PropHunt.Settings
             PropHuntOption penalty = Find(MissPenaltyId);
             PropHuntOption range = Find(DisguiseRangeId);
             PropHuntOption cooldown = Find(DisguiseCooldownId);
+            PropHuntOption seekerWait = Find(SeekerWaitTimeId);
 
             if (propHunt != null) propHunt.Value = (byte)(PropHuntPlugin.isPropHunt ? 1 : 0);
             if (penalty != null)
@@ -138,6 +155,11 @@ namespace PropHunt.Settings
                 int index = Array.IndexOf(cooldown.AllValues, PropHuntPlugin.disguiseCooldown.ToString("0"));
                 cooldown.Value = (byte)Math.Max(0, index);
             }
+            if (seekerWait != null)
+            {
+                int index = Array.IndexOf(seekerWait.AllValues, PropHuntPlugin.seekerWaitTime.ToString("0"));
+                seekerWait.Value = (byte)Math.Max(0, index);
+            }
         }
 
         /// <summary>Host: broadcasts the full current state to all clients.</summary>
@@ -145,7 +167,7 @@ namespace PropHunt.Settings
         {
             if (AmongUsClient.Instance == null || !AmongUsClient.Instance.AmHost) return;
             if (PlayerControl.LocalPlayer == null) return;
-            RPCHandler.RPCSettingSync(PlayerControl.LocalPlayer, PropHuntPlugin.isPropHunt, PropHuntPlugin.missTimePenalty, PropHuntPlugin.disguiseRange, PropHuntPlugin.disguiseCooldown);
+            RPCHandler.RPCSettingSync(PlayerControl.LocalPlayer, PropHuntPlugin.isPropHunt, PropHuntPlugin.missTimePenalty, PropHuntPlugin.disguiseRange, PropHuntPlugin.disguiseCooldown, PropHuntPlugin.seekerWaitTime);
         }
 
         /// <summary>Host: applies a menu change, persists it, pushes it to everyone.</summary>

@@ -188,7 +188,8 @@ namespace PropHunt
 		{
 			PlayerControl player = PlayerControl.LocalPlayer;
 
-			if (!PropHuntPlugin.isPropHunt || player.Data.Role.IsImpostor || KeyboardJoystick.player == null
+			if (!PropHuntPlugin.isPropHunt || player == null || player.Data == null || player.Data.Role == null
+				|| player.Data.Role.IsImpostor || KeyboardJoystick.player == null
 				|| AmongUsClient.Instance.GameState != InnerNet.InnerNetClient.GameStates.Started)
 				return true;
 
@@ -239,6 +240,22 @@ namespace PropHunt
 		{
 			PropManager.playerToProp.Clear();
 			isMovingProp = false;
+		}
+
+		[HarmonyPatch(typeof(LogicOptionsHnS), nameof(LogicOptionsHnS.GetEscapeTime))]
+		[HarmonyPostfix]
+		public static void SeekerWaitTimePatch(ref float __result)
+		{
+			if (!PropHuntPlugin.isPropHunt) return;
+			__result = PropHuntPlugin.seekerWaitTime;
+		}
+
+		[HarmonyPatch(typeof(LogicOptionsHnS), nameof(LogicOptionsHnS.GetCrewmateLeadTime))]
+		[HarmonyPostfix]
+		public static void CrewmateLeadTimePatch(ref int __result)
+		{
+			if (!PropHuntPlugin.isPropHunt) return;
+			__result = (int)PropHuntPlugin.seekerWaitTime;
 		}
 
 		[HarmonyPatch(typeof(PlayerPhysics), nameof(PlayerPhysics.ResetAnimState))]
