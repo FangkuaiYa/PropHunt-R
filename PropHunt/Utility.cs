@@ -42,9 +42,10 @@ public static class Utility
         yield break;
     }
 
-    public static unsafe Texture2D LoadTextureFromPath(string path) 
+    public static unsafe Texture2D LoadTextureFromPath(string path)
     {
-        try {
+        try
+        {
             Texture2D texture = new(2, 2, TextureFormat.ARGB32, true);
             Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(path);
             long length = stream.Length;
@@ -53,7 +54,9 @@ public static class Utility
             ImageConversion.LoadImage(texture, textureBytes, false);
             Logger<PropHuntPlugin>.Info("Correctly loaded " + path);
             return texture;
-        } catch {
+        }
+        catch
+        {
             Logger<PropHuntPlugin>.Error("Failed loading " + path);
         }
         return null;

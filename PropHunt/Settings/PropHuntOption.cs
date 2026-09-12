@@ -1,5 +1,3 @@
-using AmongUs.GameOptions;
-
 namespace PropHunt.Settings
 {
     public class PropHuntOption

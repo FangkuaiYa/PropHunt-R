@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using AmongUs.GameOptions;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;

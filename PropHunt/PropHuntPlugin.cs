@@ -30,7 +30,7 @@ public partial class PropHuntPlugin : BasePlugin
     public static float disguiseRange = 1.5f;
     public static float disguiseCooldown = 5f;
     public static float seekerWaitTime = 10f;
-    
+
     // Constants
     public const float propMoveSpeed = 0.5f;
     public const float maxPropDistance = 0.6f;
@@ -62,21 +62,21 @@ public partial class PropHuntPlugin : BasePlugin
         Harmony.PatchAll();
     }
 
-	[HarmonyPatch(typeof(HudManager), nameof(HudManager.Update))]
-	public static class HudUpdatePatch
-	{
-		public static void Postfix()
-		{
-			CustomButton.HudUpdate();
-		}
-	}
+    [HarmonyPatch(typeof(HudManager), nameof(HudManager.Update))]
+    public static class HudUpdatePatch
+    {
+        public static void Postfix()
+        {
+            CustomButton.HudUpdate();
+        }
+    }
 
-	[HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Close))]
-	public static class MeetingClosePatch
-	{
-		public static void Postfix()
-		{
-			CustomButton.MeetingEndedUpdate();
-		}
-	}
+    [HarmonyPatch(typeof(MeetingHud), nameof(MeetingHud.Close))]
+    public static class MeetingClosePatch
+    {
+        public static void Postfix()
+        {
+            CustomButton.MeetingEndedUpdate();
+        }
+    }
 }

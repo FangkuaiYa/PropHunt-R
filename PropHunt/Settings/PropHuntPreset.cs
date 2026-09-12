@@ -11,7 +11,7 @@ using UnityEngine.Events;
 namespace PropHunt.Settings
 {
     [HarmonyPatch]
-    class PropHuntPreset 
+    class PropHuntPreset
     {
         static StringNames presetStringName = CustomStringName.CreateAndRegister("Prop Hunt");
         const string propHuntDescription = "The preset for the ideal Prop Hunt experience with balanced game settings.";
@@ -21,11 +21,11 @@ namespace PropHunt.Settings
 
 
         // Called on plugin load to setup prerequisites
-        public static void SetupPreset() 
+        public static void SetupPreset()
         {
             // Add rule preset
             propHuntRulePreset = (RulesPresets)Enum.GetValues<RulesPresets>().Length;
-            EnumInjector.InjectEnumValues<RulesPresets>(new Dictionary<string, object>{{"PropHunt", propHuntRulePreset}});
+            EnumInjector.InjectEnumValues<RulesPresets>(new Dictionary<string, object> { { "PropHunt", propHuntRulePreset } });
 
             // Load Preset sprie
             presetPortraitSprite = Utility.LoadSprite("PropHunt.Resources.PropHuntPortrait.png", 100f);
@@ -60,11 +60,14 @@ namespace PropHunt.Settings
             presetButton.selectedSprites.transform.GetChild(1).GetComponent<SpriteRenderer>().sprite = presetPortraitSprite;
 
             // Only enable the correct sprites
-            if (GameOptionsManager.Instance.CurrentGameOptions.RulesPreset == propHuntRulePreset) {
+            if (GameOptionsManager.Instance.CurrentGameOptions.RulesPreset == propHuntRulePreset)
+            {
                 __instance.StandardPresetButton.SelectButton(false);
                 __instance.SecondPresetButton.SelectButton(false);
                 presetButton.SelectButton(true);
-            } else {
+            }
+            else
+            {
                 presetButton.SelectButton(false);
             }
 
@@ -79,23 +82,27 @@ namespace PropHunt.Settings
             presetButton.transform.localPosition = new Vector3(2.4f, -0.1f, 0);
 
             // Add interactivity to the prop button
-            presetButton.OnClick.AddListener(new System.Action(() => {
+            presetButton.OnClick.AddListener(new System.Action(() =>
+            {
                 __instance.StandardPresetButton.SelectButton(false);
                 __instance.SecondPresetButton.SelectButton(false);
                 presetButton.SelectButton(true);
                 __instance.ClickPresetButton(propHuntRulePreset, false);
             }));
 
-            presetButton.OnMouseOver.AddListener((UnityAction)delegate {
+            presetButton.OnMouseOver.AddListener((UnityAction)delegate
+            {
                 __instance.PresetDescriptionText.text = propHuntDescription;
             });
 
-            presetButton.OnMouseOut.AddListener((UnityAction)delegate {
+            presetButton.OnMouseOut.AddListener((UnityAction)delegate
+            {
                 __instance.SetSelectedText();
             });
 
             // Reset Prop Hunt button when other buttons clicked
-            void ResetPropHunt() {
+            void ResetPropHunt()
+            {
                 presetButton.SelectButton(false);
             }
             __instance.StandardPresetButton.OnClick.AddListener((UnityAction)ResetPropHunt);
@@ -110,11 +117,14 @@ namespace PropHunt.Settings
         {
             if (!presetButton) return;
 
-            if (GameOptionsManager.Instance.CurrentGameOptions.RulesPreset == propHuntRulePreset) {
+            if (GameOptionsManager.Instance.CurrentGameOptions.RulesPreset == propHuntRulePreset)
+            {
                 __instance.StandardPresetButton.SelectButton(false);
                 __instance.SecondPresetButton.SelectButton(false);
                 presetButton.SelectButton(true);
-            } else {
+            }
+            else
+            {
                 presetButton.SelectButton(false);
             }
         }
@@ -123,9 +133,9 @@ namespace PropHunt.Settings
         // Show correct text when selected
         [HarmonyPatch(typeof(GamePresetsTab), nameof(GamePresetsTab.SetSelectedText))]
         [HarmonyPostfix]
-        static void GamePresetsSelectedTextPatch(GamePresetsTab __instance) 
+        static void GamePresetsSelectedTextPatch(GamePresetsTab __instance)
         {
-            if (GameOptionsManager.Instance.CurrentGameOptions.RulesPreset == propHuntRulePreset) 
+            if (GameOptionsManager.Instance.CurrentGameOptions.RulesPreset == propHuntRulePreset)
             {
                 __instance.PresetDescriptionText.text = propHuntDescription;
             }
@@ -136,9 +146,9 @@ namespace PropHunt.Settings
         [HarmonyPatch(typeof(HideNSeekGameOptionsV10), nameof(HideNSeekGameOptionsV10.SetRecommendations), [typeof(int), typeof(bool), typeof(RulesPresets)])]
         [HarmonyPatch(typeof(HideNSeekGameOptionsV11), nameof(HideNSeekGameOptionsV11.SetRecommendations), [typeof(int), typeof(bool), typeof(RulesPresets)])]
         [HarmonyPostfix]
-        public static void SetRecommendations(object __instance, int numPlayers, bool isOnline, RulesPresets rulesPresets) 
+        public static void SetRecommendations(object __instance, int numPlayers, bool isOnline, RulesPresets rulesPresets)
         {
-            if (rulesPresets == propHuntRulePreset) 
+            if (rulesPresets == propHuntRulePreset)
             {
                 HideNSeekGameOptionsV10 v10 = __instance as HideNSeekGameOptionsV10;
                 if (v10 != null)
@@ -159,7 +169,9 @@ namespace PropHunt.Settings
                     v11.ImpostorLightMod = 1;
                 }
                 RPCHandler.RPCSettingSync(PlayerControl.LocalPlayer, true, PropHuntPlugin.missTimePenalty, PropHuntPlugin.disguiseRange, PropHuntPlugin.disguiseCooldown, PropHuntPlugin.seekerWaitTime);
-            } else {
+            }
+            else
+            {
                 RPCHandler.RPCSettingSync(PlayerControl.LocalPlayer, false, PropHuntPlugin.missTimePenalty, PropHuntPlugin.disguiseRange, PropHuntPlugin.disguiseCooldown, PropHuntPlugin.seekerWaitTime);
             }
         }
@@ -170,7 +182,7 @@ namespace PropHunt.Settings
         [HarmonyPostfix]
         static void GetRulesPresetTitlePatch(IGameOptions gameOptions, ref StringNames __result)
         {
-            if (gameOptions.RulesPreset == propHuntRulePreset) 
+            if (gameOptions.RulesPreset == propHuntRulePreset)
             {
                 __result = presetStringName;
             }
