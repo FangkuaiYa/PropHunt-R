@@ -143,22 +143,12 @@ namespace PropHunt.Settings
 
 
         // Set the correct recommendations when the prop preset is selected
-        [HarmonyPatch(typeof(HideNSeekGameOptionsV10), nameof(HideNSeekGameOptionsV10.SetRecommendations), [typeof(int), typeof(bool), typeof(RulesPresets)])]
         [HarmonyPatch(typeof(HideNSeekGameOptionsV11), nameof(HideNSeekGameOptionsV11.SetRecommendations), [typeof(int), typeof(bool), typeof(RulesPresets)])]
         [HarmonyPostfix]
         public static void SetRecommendations(object __instance, int numPlayers, bool isOnline, RulesPresets rulesPresets)
         {
             if (rulesPresets == propHuntRulePreset)
             {
-                HideNSeekGameOptionsV10 v10 = __instance as HideNSeekGameOptionsV10;
-                if (v10 != null)
-                {
-                    v10.SeekerPings = false;
-                    v10.SeekerFinalMap = false;
-                    v10.FinalCountdownTime = 30f;
-                    v10.EscapeTime = PropHuntPlugin.seekerWaitTime;
-                    v10.ImpostorLightMod = 1;
-                }
                 HideNSeekGameOptionsV11 v11 = __instance as HideNSeekGameOptionsV11;
                 if (v11 != null)
                 {
